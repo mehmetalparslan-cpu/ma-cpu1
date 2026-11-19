@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Türkü Radyo</title>
+<style>
+:root{--bg:#f6efe3;--card:#fffaf0;--ink:#2b1d14;--mute:#7a6857;--acc:#9c3d1b;--line:#e2d3bb}
+@media (prefers-color-scheme:dark){:root{--bg:#1c140f;--card:#271c15;--ink:#f3e8d8;--mute:#b9a48d;--acc:#e08a5b;--line:#433225}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,"Times New Roman",serif;line-height:1.5}
+main{max-width:680px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.9rem;margin:0 0 4px;color:var(--acc)}
+h2{font-size:1.05rem;margin:0 0 10px}
+.sub{color:var(--mute);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.box{aspect-ratio:16/9;max-width:360px;margin:0 auto 14px;border-radius:10px;overflow:hidden;background:#000}
+.box iframe{width:100%;height:100%;border:0}
+#title{font-size:1.2rem;font-weight:bold;margin:0}
+#artist{color:var(--mute);margin:2px 0 14px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.times{display:flex;justify-content:space-between;color:var(--mute);font-size:.85rem}
+.controls{display:flex;justify-content:center;align-items:center;gap:10px;margin:12px 0}
+button{font:inherit;cursor:pointer;border:1px solid var(--acc);color:var(--acc);background:transparent;border-radius:999px;padding:8px 14px}
+button.main{background:var(--acc);color:#fff;font-size:1.2rem;padding:10px 24px}
+button.on{background:var(--acc);color:#fff}
+.vol{display:flex;align-items:center;gap:10px;color:var(--mute)}
+.vol input{max-width:160px}
+select,input[type=text]{font:inherit;width:100%;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);margin-bottom:10px}
+.add{display:flex;gap:8px;flex-wrap:wrap}
+.add input{flex:1;min-width:200px;margin:0}
+ul{list-style:none;margin:0;padding:0;max-height:320px;overflow-y:auto}
+li{padding:9px 6px;border-bottom:1px solid var(--line);cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+li:last-child{border:0}
+li small{color:var(--mute);display:block}
+li.now{color:var(--acc);font-weight:bold}
+li:hover{background:var(--bg)}
+li .del{padding:2px 10px;font-size:.8rem;align-self:center}
+.note{color:var(--mute);font-size:.88rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:.9rem;color:var(--ink);text-decoration:none;background:var(--bg)}
+.chip:hover{border-color:var(--acc);color:var(--acc)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Türkü Radyo</h1>
+  <p class="sub">Halk müziğinden seçmeler</p>
+
+  <section class="card">
+    <div class="box" id="ytbox" hidden><div id="yt"></div></div>
+    <p id="title">Başlamak için ▶ düğmesine bas</p>
+    <p id="artist">&nbsp;</p>
+    <input type="range" id="seek" min="0" max="100" value="0" step="0.1" aria-label="İlerleme">
+    <div class="times"><span id="cur">0:00</span><span id="dur">0:00</span></div>
+    <div class="controls">
+      <button id="shuffle" class="on" title="Karışık çalma">🔀</button>
+      <button id="prev" title="Önceki">⏮</button>
+      <button id="play" class="main" title="Çal / Duraklat">▶</button>
+      <button id="next" title="Sonraki">⏭</button>
+    </div>
+    <div class="vol">🔈 <input type="range" id="vol" min="0" max="1" step="0.01" value="0.8" aria-label="Ses"></div>
+  </section>
+
+  <section class="card">
+    <h2>Türkü listesi</h2>
+    <select id="filter" aria-label="Sanatçı seç"><option value="">Tüm sanatçılar</option></select>
+    <ul id="list"></ul>
+    <p class="note" id="empty">Liste her gün otomatik güncellenir. Boşsa ilk güncelleme henüz çalışmamıştır.</p>
+  </section>
+
+  <section class="card">
+    <h2>Listeye ekle</h2>
+    <div class="add">
+      <input type="text" id="link" placeholder="YouTube video veya çalma listesi linki">
+      <input type="text" id="name" placeholder="Ad (isteğe bağlı)">
+      <button id="add">Ekle</button>
+    </div>
+    <p class="note" id="msg">İstersen kendi seçtiğin türküyü de ekleyebilirsin. Çalma listesi linki eklersen o liste karışık çalınır. Eklediklerin bu tarayıcıda saklanır.</p>
+  </section>
+
+  <section class="card">
+    <h2>Sanatçılar</h2>
+    <p class="note" style="margin-top:0">Birine tıkla, YouTube’da türkülerini bul; beğendiğinin linkini yukarıdan ekle.</p>
+    <div class="chips" id="artists"></div>
+  </section>
+
+  <p class="note">Türküler YouTube’ın resmi oynatıcısıyla ve sahibinin izin verdiği mp3 dosyalarıyla çalınır.</p>
+  <audio id="audio" preload="none"></audio>
+</main>
+
+<script src="https://www.youtube.com/iframe_api" async></script>
+<script>
+/* ============================================================
+   KENDİ LİSTEN
+   Her satır bir türkü. Üç türden biri kullanılır:
+     { artist:"Sanatçı", title:"Türkü", yt:"YOUTUBE_VİDEO_ID" },       -> tek YouTube videosu
+     { artist:"Sanatçı", title:"Liste", pl:"YOUTUBE_LİSTE_ID" },       -> YouTube çalma listesi (karışık çalar)
+     { artist:"Sanatçı", title:"Türkü", file:"mp3/dosya.mp3" },        -> sitedeki mp3 (yalnızca hakkın olan kayıtlar)
+   Video ID: youtube.com/watch?v=BURASI   Liste ID: youtube.com/playlist?list=BURASI
+   ============================================================ */
+const TRACKS = [
+  // { artist:"Musa Eroğlu", title:"Örnek", yt:"VIDEO_ID" },
+];
+
+const ARTISTS=["Musa Eroğlu","Arif Sağ","Mustafa Özarslan","Güler Duman","Gülay","Hüseyin Korkankorkmaz","Okan Murat Öztürk","Nida Ateş","Grup Yorum","Muharrem Temiz","Mahsuni Şerif","Neşet Ertaş","Zülfi Livaneli","Gürsoy","Sabahat Akkiraz","Yavuz Bingöl","Gani Peşken","Özcan Türe","5 Quartet","İsmail Türüt","Cem Erdost","Nida Tüfekçi","Deniz Türkan","Tolga Sağ","Hüseyin Karakuş","Kıvırcık Ali","Hulusi Gökmeşe","Hasret Gültekin","Dil Tengi"];
+
+/* ============================================================
+   OTOMATİK LİSTE AYARLARI
+   YouTube Data API v3 anahtarını buraya yaz (aşağıdaki açıklamaya bak).
+   Boş bırakırsan otomatik liste çalışmaz, yalnızca elle eklediklerin çalar.
+   ============================================================ */
+const API_KEY = "";          // örn. "AIzaSy..."
+const MAIN_PICKS = 2;        // her seferde listenizden rastgele kaç sanatçı taransın
+const SIMILAR_PICKS = 1;     // her seferde benzer tarzdan kaç sanatçı eklensin
+const PER_ARTIST = 15;       // sanatçı başına en fazla kaç türkü
+const SIMILAR=["Âşık Veysel","Ruhi Su","Selda Bağcan","Ferhat Tunç","Ali Ekber Çiçek","Muhlis Akarsu","Metin Kemal Kahraman","Erdal Erzincan","Davut Sulari","Âşık Ali İzzet","Çetin Akdeniz","Fuat Saka","Hakkı Bulut","Edip Akbayram","Ahmet Kaya"];
+
+const KEY="turku-radyo-v2",CACHE_KEY="turku-onbellek-v1",CACHE_MS=7*24*3600*1000;
+const $=id=>document.getElementById(id);
+const audio=$("audio");
+let daily=[],auto=[],building=false,mine=[],visible=[],order=[],pos=-1,cur=null,shuffleOn=true,player=null,ytReady=false,pending=null,vol=0.8;
+
+const fmt=s=>isFinite(s)&&s>0?Math.floor(s/60)+":"+String(Math.floor(s%60)).padStart(2,"0"):"0:00";
+const shuffled=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const all=()=>TRACKS.concat(mine,daily,auto);
+
+function loadMine(){try{mine=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){mine=[]}}
+function saveMine(){try{localStorage.setItem(KEY,JSON.stringify(mine))}catch(e){}}
+
+/* ---------- YouTube ---------- */
+window.onYouTubeIframeAPIReady=()=>{
+  player=new YT.Player("yt",{width:"100%",height:"100%",playerVars:{playsinline:1,rel:0},events:{
+    onReady:()=>{ytReady=true;player.setVolume(vol*100);if(pending){pending();pending=null}},
+    onStateChange:onState,
+    onError:()=>{ if(cur&&cur.pl) player.nextVideo(); else setTimeout(next,600); }
+  }});
+};
+function onState(e){
+  if(e.data===1){
+    $("play").textContent="⏸";
+    const d=player.getVideoData?player.getVideoData():{};
+    $("title").textContent=(cur&&cur.yt&&cur.title)||d.title||"Türkü";
+    $("artist").textContent=(cur&&cur.artist)||d.author||"";
+  }else if(e.data===2){$("play").textContent="▶"}
+  else if(e.data===0){
+    if(cur&&cur.pl){
+      const l=player.getPlaylist()||[];
+      if(player.getPlaylistIndex()>=l.length-1) next();
+    }else next();
+  }
+}
+function whenYT(fn){ytReady?fn():(pending=fn)}
+
+/* ---------- Otomatik liste ---------- */
+const norm=s=>String(s).toLocaleLowerCase("tr").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ı/g,"i");
+const decode=s=>{const t=document.createElement("textarea");t.innerHTML=s;return t.value};
+const pick=(a,n)=>shuffled(a).slice(0,n);
+function readCache(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||"{}")}catch(e){return{}}}
+function writeCache(c){try{localStorage.setItem(CACHE_KEY,JSON.stringify(c))}catch(e){}}
+async function getArtist(name){
+  const cache=readCache(),hit=cache[name];
+  if(hit&&Date.now()-hit.t<CACHE_MS)return hit.items;
+  const url="https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&videoCategoryId=10&maxResults=25&q="+encodeURIComponent(name+" türkü")+"&key="+encodeURIComponent(API_KEY);
+  const r=await fetch(url),j=await r.json();
+  if(j.error)throw new Error(j.error.message||"YouTube API hatası");
+  let items=(j.items||[]).map(v=>({id:v.id.videoId,title:decode(v.snippet.title),channel:decode(v.snippet.channelTitle),artist:name}));
+  const n=norm(name),match=items.filter(v=>norm(v.title+" "+v.channel).includes(n));
+  if(match.length>=3)items=match;
+  items=items.slice(0,PER_ARTIST);
+  cache[name]={t:Date.now(),items};writeCache(cache);
+  return items;
+}
+async function buildAuto(){
+  if(building)return;
+  if(!API_KEY){
+    if(all().length){pos=0;playPos()}
+    else{$("title").textContent="Liste boş";$("artist").textContent="Günlük liste henüz hazırlanmadı, biraz sonra tekrar dene"}
+    return;
+  }
+  building=true;
+  $("title").textContent="Liste hazırlanıyor…";$("artist").textContent="Sanatçılar taranıyor";
+  try{
+    const picks=pick(ARTISTS,MAIN_PICKS).concat(pick(SIMILAR,SIMILAR_PICKS));
+    const res=await Promise.all(picks.map(getArtist));
+    const have=new Set(all().map(t=>t.yt));
+    const fresh=[];
+    shuffled([].concat(...res)).forEach(v=>{if(!have.has(v.id)){have.add(v.id);fresh.push({artist:v.artist,title:v.title,yt:v.id})}});
+    if(!fresh.length)throw new Error("Yeni türkü bulunamadı");
+    auto=auto.concat(fresh).slice(-200);
+    $("filter").value="";buildFilter();render();
+    const start=Math.max(0,visible.length-fresh.length);
+    const idx=[];for(let i=start;i<visible.length;i++)idx.push(i);
+    order=shuffleOn?shuffled(idx):idx;pos=0;
+    $("msg").textContent="Otomatik liste: "+picks.join(", ");
+    building=false;playPos();
+  }catch(err){
+    building=false;
+    $("title").textContent="Liste oluşturulamadı";$("artist").textContent=err.message;
+    if(all().length)$("msg").textContent="Otomatik liste kurulamadı: "+err.message;
+  }
+}
+
+/* ---------- Çalma ---------- */
+function stopAll(){audio.pause();if(ytReady)try{player.stopVideo()}catch(e){}}
+function playPos(){
+  if(!visible.length)return;
+  if(pos<0||pos>=order.length){if(shuffleOn)makeOrder();pos=0}
+  const t=visible[order[pos]];cur=t;stopAll();
+  document.querySelectorAll("li").forEach(li=>li.classList.toggle("now",+li.dataset.i===order[pos]));
+  $("title").textContent=t.title||"Türkü";$("artist").textContent=t.artist||"";
+  if(t.file){
+    $("ytbox").hidden=true;audio.src=t.file;audio.volume=vol;audio.play().catch(()=>{});
+  }else{
+    $("ytbox").hidden=false;
+    whenYT(()=>{
+      if(t.pl){player.loadPlaylist({list:t.pl,listType:"playlist",index:0});player.setShuffle(true)}
+      else player.loadVideoById(t.yt);
+      player.setVolume(vol*100);
+    });
+  }
+  if("mediaSession" in navigator)navigator.mediaSession.metadata=new MediaMetadata({title:t.title||"Türkü",artist:t.artist||""});
+}
+function next(){
+  if(cur&&cur.pl&&ytReady){const l=player.getPlaylist()||[];if(player.getPlaylistIndex()<l.length-1){player.nextVideo();return}}
+  if(API_KEY&&pos+1>=order.length){buildAuto();return}
+  pos++;playPos();
+}
+function prev(){
+  if(cur&&cur.pl&&ytReady&&player.getPlaylistIndex()>0){player.previousVideo();return}
+  pos=Math.max(0,pos-1);playPos();
+}
+function toggle(){
+  if(!cur){if(API_KEY&&!daily.length&&!auto.length)buildAuto();else if(visible.length){pos=0;playPos()}else buildAuto();return}
+  if(cur.file){audio.paused?audio.play():audio.pause()}
+  else if(ytReady){player.getPlayerState()===1?player.pauseVideo():player.playVideo()}
+}
+
+/* ---------- Liste ---------- */
+function makeOrder(){const idx=visible.map((_,i)=>i);order=shuffleOn?shuffled(idx):idx;pos=-1}
+function render(){
+  const f=$("filter").value;
+  visible=all().filter(t=>!f||t.artist===f);
+  makeOrder();cur=null;
+  const ul=$("list");ul.innerHTML="";
+  visible.forEach((t,i)=>{
+    const li=document.createElement("li");li.dataset.i=i;
+    const d=document.createElement("div");d.textContent=(t.pl?"📃 ":"")+(t.title||"Türkü");
+    if(t.artist){const s=document.createElement("small");s.textContent=t.artist;d.append(s)}
+    li.append(d);
+    li.onclick=()=>{pos=order.indexOf(i);playPos()};
+    if(t.mine){const b=document.createElement("button");b.className="del";b.textContent="✕";b.onclick=e=>{e.stopPropagation();mine.splice(t.mine-1,1);mine.forEach((m,k)=>m.mine=k+1);saveMine();render()};li.append(b)}
+    ul.append(li);
+  });
+  $("empty").hidden=all().length>0;
+}
+function buildFilter(){
+  const sel=$("filter"),keep=sel.value;
+  sel.length=1;
+  [...new Set(all().map(t=>t.artist).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"tr")).forEach(n=>{const o=document.createElement("option");o.value=n;o.textContent=n;sel.append(o)});
+  sel.value=keep;
+}
+function parseLink(u){
+  u=String(u).trim();
+  let m=u.match(/[?&]list=([A-Za-z0-9_-]{10,})/);
+  if(m&&(/playlist\?/.test(u)||!/[?&]v=/.test(u)))return{pl:m[1]};
+  m=u.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([A-Za-z0-9_-]{11})/)||u.match(/^([A-Za-z0-9_-]{11})$/);
+  return m?{yt:m[1]}:null;
+}
+
+/* ---------- Olaylar ---------- */
+$("add").onclick=()=>{
+  const p=parseLink($("link").value);
+  if(!p){$("msg").textContent="Geçerli bir YouTube video veya çalma listesi linki gir.";return}
+  mine.push(Object.assign({title:$("name").value.trim(),mine:mine.length+1},p));
+  saveMine();$("link").value="";$("name").value="";$("msg").textContent="Eklendi.";
+  buildFilter();render();
+};
+$("play").onclick=toggle;$("next").onclick=next;$("prev").onclick=prev;
+$("shuffle").onclick=()=>{shuffleOn=!shuffleOn;$("shuffle").classList.toggle("on",shuffleOn);makeOrder()};
+$("filter").onchange=render;
+$("vol").oninput=e=>{vol=+e.target.value;audio.volume=vol;if(ytReady)player.setVolume(vol*100)};
+$("seek").oninput=e=>{
+  const p=e.target.value/100;
+  if(cur&&cur.file){if(isFinite(audio.duration))audio.currentTime=audio.duration*p}
+  else if(ytReady)player.seekTo(player.getDuration()*p,true);
+};
+audio.onplay=()=>$("play").textContent="⏸";
+audio.onpause=()=>$("play").textContent="▶";
+audio.onended=next;
+audio.onerror=()=>{if(audio.src)setTimeout(next,500)};
+setInterval(()=>{
+  let c=0,d=0;
+  if(cur&&cur.file){c=audio.currentTime;d=audio.duration}
+  else if(ytReady&&cur){try{c=player.getCurrentTime();d=player.getDuration()}catch(e){}}
+  $("cur").textContent=fmt(c);$("dur").textContent=fmt(d);
+  if(d>0&&document.activeElement!==$("seek"))$("seek").value=c/d*100;
+},500);
+if("mediaSession" in navigator){
+  navigator.mediaSession.setActionHandler("nexttrack",next);
+  navigator.mediaSession.setActionHandler("previoustrack",prev);
+}
+
+/* ---------- Başlangıç ---------- */
+ARTISTS.forEach(a=>{
+  const c=document.createElement("a");c.className="chip";c.textContent=a;c.target="_blank";c.rel="noopener";
+  c.href="https://www.youtube.com/results?search_query="+encodeURIComponent(a+" türkü");
+  $("artists").append(c);
+});
+audio.volume=vol;
+loadMine();mine.forEach((m,k)=>m.mine=k+1);
+buildFilter();render();
+fetch("tracks.json",{cache:"no-cache"}).then(r=>r.ok?r.json():null).then(j=>{
+  if(j&&Array.isArray(j.tracks)&&j.tracks.length){daily=j.tracks.filter(t=>t&&t.yt);buildFilter();if(!cur)render()}
+}).catch(()=>{});
+</script>
+</body>
+</html>
