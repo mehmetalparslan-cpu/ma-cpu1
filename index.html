@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#101827" />
+  <title>DosyaLab — Ücretsiz Dosya Dönüştürücü</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-2: #f8faff;
+      --ink: #152238;
+      --muted: #6d7b91;
+      --line: #e5ebf3;
+      --primary: #5267e8;
+      --primary-dark: #4053cf;
+      --primary-soft: #edf0ff;
+      --mint: #1ca889;
+      --mint-soft: #e7f8f3;
+      --danger: #d94f63;
+      --shadow: 0 18px 55px rgba(29, 48, 87, .09);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(104, 126, 255, .11), transparent 30rem),
+        radial-gradient(circle at 95% 12%, rgba(37, 198, 164, .09), transparent 25rem),
+        var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, select, input { font: inherit; }
+    button { cursor: pointer; }
+    .shell { width: min(1120px, calc(100% - 40px)); margin: 0 auto; }
+
+    header { padding: 25px 0 15px; }
+    .nav { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+    .brand { display: inline-flex; align-items: center; gap: 11px; color: var(--ink); text-decoration: none; font-size: 19px; font-weight: 850; letter-spacing: -.7px; }
+    .brand-mark {
+      width: 40px; height: 40px; display: grid; place-items: center; border-radius: 13px;
+      color: white; background: linear-gradient(145deg, #697bff, #4354d7);
+      box-shadow: 0 8px 18px rgba(82, 103, 232, .25);
+    }
+    .brand-mark svg { width: 22px; height: 22px; }
+    .nav-right { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; font-weight: 650; }
+    .privacy-pill { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #dcefe9; background: #f0faf6; color: #16866e; padding: 9px 12px; border-radius: 999px; }
+    .privacy-pill svg { width: 14px; height: 14px; }
+
+    .hero { padding: 57px 0 31px; text-align: center; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; color: var(--primary); background: var(--primary-soft); border: 1px solid #e1e5ff; border-radius: 999px; padding: 8px 13px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .eyebrow .spark { font-size: 14px; }
+    h1 { margin: 18px 0 12px; font-size: clamp(34px, 5vw, 54px); line-height: 1.08; letter-spacing: -2.2px; font-weight: 850; }
+    h1 span { color: var(--primary); }
+    .hero p { max-width: 610px; margin: 0 auto; color: var(--muted); font-size: 15px; line-height: 1.75; }
+
+    main { padding: 12px 0 70px; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 19px; align-items: start; }
+    .panel { background: var(--surface); border: 1px solid rgba(226, 233, 243, .9); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .converter { padding: 25px; }
+    .panel-heading { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 18px; }
+    .panel-heading h2 { margin: 0; font-size: 17px; letter-spacing: -.45px; }
+    .panel-heading p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .step { color: #97a3b5; font-size: 11px; font-weight: 800; letter-spacing: .07em; }
+
+    .dropzone {
+      position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 225px; padding: 25px; border: 1.5px dashed #cbd5e8; border-radius: 18px;
+      background: linear-gradient(180deg, #fbfcff, #f8faff); text-align: center; transition: .2s ease;
+      outline: none;
+    }
+    .dropzone:hover, .dropzone:focus-visible, .dropzone.dragover { border-color: var(--primary); background: #f3f5ff; box-shadow: inset 0 0 0 1px rgba(82,103,232,.08); }
+    .upload-icon { width: 57px; height: 57px; display: grid; place-items: center; border-radius: 17px; background: var(--primary-soft); color: var(--primary); margin-bottom: 14px; }
+    .upload-icon svg { width: 27px; height: 27px; }
+    .dropzone strong { font-size: 15px; }
+    .dropzone .sub { margin-top: 7px; color: var(--muted); font-size: 12px; }
+    .browse-btn { margin-top: 16px; background: var(--primary); color: white; border: 0; border-radius: 11px; padding: 11px 17px; font-size: 12px; font-weight: 800; box-shadow: 0 7px 15px rgba(82,103,232,.18); transition: .18s; }
+    .browse-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    .formats-line { margin-top: 13px; color: #98a4b5; font-size: 10px; line-height: 1.5; }
+    #fileInput { display: none; }
+
+    .file-card { display: none; align-items: center; gap: 13px; padding: 15px; margin-top: 15px; border: 1px solid var(--line); border-radius: 15px; background: var(--surface-2); }
+    .file-card.visible { display: flex; }
+    .file-icon { width: 43px; height: 43px; flex: 0 0 43px; display: grid; place-items: center; border-radius: 12px; color: var(--primary); background: var(--primary-soft); font-size: 10px; font-weight: 900; text-transform: uppercase; }
+    .file-info { min-width: 0; flex: 1; }
+    .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 800; }
+    .file-meta { margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .remove-file { width: 31px; height: 31px; border: 0; border-radius: 9px; color: #8290a5; background: transparent; font-size: 20px; }
+    .remove-file:hover { color: var(--danger); background: #fff0f2; }
+
+    .convert-settings { display: grid; grid-template-columns: 1fr 45px 1fr; align-items: end; gap: 12px; margin-top: 21px; }
+    .field label { display: block; margin: 0 0 8px 2px; color: #748198; font-size: 10px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+    .select-wrap { position: relative; }
+    select { width: 100%; min-height: 48px; appearance: none; padding: 0 39px 0 14px; border: 1px solid var(--line); border-radius: 12px; outline: none; background: #fff; color: var(--ink); font-size: 12px; font-weight: 750; }
+    select:focus { border-color: #aab5ff; box-shadow: 0 0 0 3px rgba(82,103,232,.09); }
+    .select-wrap:after { content: "⌄"; position: absolute; right: 14px; top: 10px; color: #8d99ad; font-size: 18px; pointer-events: none; }
+    .swap { width: 41px; height: 41px; margin-bottom: 3px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 12px; background: #fff; color: #8c99af; font-size: 17px; }
+    .swap:hover { color: var(--primary); border-color: #ccd2ff; background: var(--primary-soft); }
+    .convert-btn { width: 100%; min-height: 51px; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 19px; border: 0; border-radius: 13px; color: #fff; background: linear-gradient(100deg, #5669e8, #5966dd); box-shadow: 0 10px 20px rgba(82,103,232,.2); font-size: 13px; font-weight: 850; transition: .18s; }
+    .convert-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 13px 23px rgba(82,103,232,.27); }
+    .convert-btn:disabled { opacity: .48; cursor: not-allowed; box-shadow: none; }
+    .convert-btn svg { width: 17px; height: 17px; }
+    .progress-wrap { display: none; margin-top: 14px; }
+    .progress-wrap.visible { display: block; }
+    .progress-top { display: flex; justify-content: space-between; margin-bottom: 7px; color: var(--muted); font-size: 10px; }
+    .progress-track { height: 6px; overflow: hidden; border-radius: 99px; background: #edf0f6; }
+    .progress-bar { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #6274f0, #27b99a); transition: width .25s; }
+    .result { display: none; align-items: center; gap: 12px; padding: 14px; margin-top: 15px; border: 1px solid #cceee2; border-radius: 14px; background: #f0fbf7; }
+    .result.visible { display: flex; }
+    .result-mark { width: 36px; height: 36px; flex: 0 0 36px; display: grid; place-items: center; border-radius: 11px; background: #d9f5eb; color: #16876d; font-weight: 900; }
+    .result-text { min-width: 0; flex: 1; }
+    .result-text strong { display: block; font-size: 11px; }
+    .result-text span { display: block; overflow: hidden; margin-top: 4px; color: #6e8d83; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .download-btn { flex: 0 0 auto; border: 0; border-radius: 10px; padding: 10px 12px; background: #168f74; color: #fff; font-size: 10px; font-weight: 850; }
+    .download-btn:hover { background: #11785f; }
+    .status { display: none; margin-top: 13px; padding: 11px 13px; border-radius: 11px; font-size: 11px; line-height: 1.55; }
+    .status.visible { display: block; }
+    .status.error { color: #a33346; background: #fff1f3; border: 1px solid #f8d9df; }
+    .status.info { color: #51617a; background: #f3f6fb; border: 1px solid var(--line); }
+
+    .side { display: flex; flex-direction: column; gap: 16px; }
+    .side-card { padding: 21px; }
+    .side-title { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; font-size: 13px; font-weight: 850; }
+    .side-title .mini-icon { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 10px; background: var(--mint-soft); color: var(--mint); font-size: 15px; }
+    .format-list { display: flex; flex-direction: column; gap: 13px; }
+    .format-item { display: flex; align-items: center; gap: 11px; }
+    .format-badge { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: #f0f3ff; color: #5869d9; font-size: 9px; font-weight: 900; }
+    .format-item:nth-child(2) .format-badge { color: #c27a31; background: #fff5e8; }
+    .format-item:nth-child(3) .format-badge { color: #199879; background: #e8f8f2; }
+    .format-item:nth-child(4) .format-badge { color: #9b66c9; background: #f5edfc; }
+    .format-item b { display: block; font-size: 11px; }
+    .format-item small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .privacy-card { position: relative; overflow: hidden; color: #f7fbff; background: linear-gradient(145deg, #192941, #233b5b); border: 0; }
+    .privacy-card:after { content: ""; position: absolute; width: 130px; height: 130px; right: -48px; bottom: -65px; border: 1px solid rgba(255,255,255,.12); border-radius: 50%; box-shadow: 0 0 0 17px rgba(255,255,255,.035), 0 0 0 35px rgba(255,255,255,.025); }
+    .privacy-card .side-title { position: relative; z-index: 1; margin-bottom: 10px; }
+    .privacy-card .mini-icon { background: rgba(76, 212, 177, .15); color: #6be0bd; }
+    .privacy-card p { position: relative; z-index: 1; margin: 0; color: #c5d1e0; font-size: 11px; line-height: 1.7; }
+    .privacy-card strong { color: #fff; }
+    .tip { padding: 15px 17px; color: #66768d; background: #fff; border: 1px solid var(--line); border-radius: 15px; font-size: 10px; line-height: 1.65; }
+    .tip b { color: var(--ink); }
+
+    footer { padding: 0 0 28px; text-align: center; color: #99a5b5; font-size: 10px; }
+    footer span { color: var(--primary); font-weight: 800; }
+
+    @media (max-width: 850px) {
+      .workspace { grid-template-columns: 1fr; }
+      .side { display: grid; grid-template-columns: 1fr 1fr; }
+      .tip { grid-column: 1 / -1; }
+    }
+    @media (max-width: 560px) {
+      .shell { width: min(100% - 24px, 520px); }
+      header { padding-top: 16px; }
+      .nav-right { font-size: 0; }
+      .privacy-pill { font-size: 10px; }
+      .hero { padding: 39px 0 24px; }
+      h1 { letter-spacing: -1.5px; }
+      .hero p { font-size: 13px; }
+      .converter { padding: 16px; }
+      .dropzone { min-height: 205px; padding: 18px; }
+      .convert-settings { grid-template-columns: 1fr 36px 1fr; gap: 7px; }
+      .swap { width: 35px; height: 41px; }
+      select { padding-left: 10px; font-size: 11px; }
+      .side { grid-template-columns: 1fr; }
+      .tip { grid-column: auto; }
+      .result { flex-wrap: wrap; }
+      .download-btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <nav class="nav" aria-label="Ana menü">
+      <a class="brand" href="#top" aria-label="DosyaLab ana sayfa">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M7 3.75h6.2L18 8.6v11.65H7a2 2 0 0 1-2-2V5.75a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8"/><path d="M13 4v5h5M8.5 13h7M8.5 16.5h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </span>
+        DosyaLab
+      </a>
+      <div class="nav-right">
+        <span class="privacy-pill">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 19 6v5.4c0 4.5-3 7.8-7 9.6-4-1.8-7-5.1-7-9.6V6l7-3Z" stroke="currentColor" stroke-width="1.8"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Dosyaların cihazında kalır
+        </span>
+      </div>
+    </nav>
+  </header>
+
+  <section class="hero shell" id="top">
+    <div class="eyebrow"><span class="spark">✦</span> Basit · Hızlı · Özel</div>
+    <h1>Dosyalarını <span>kolayca dönüştür.</span></h1>
+    <p>Görselleri, sesleri, belgeleri ve tabloları tek bir yerden dönüştür. Üstelik dosyaların herhangi bir sunucuya yüklenmeden, tarayıcında işlenir.</p>
+  </section>
+
+  <main class="shell">
+    <div class="workspace">
+      <section class="panel converter" aria-labelledby="converterTitle">
+        <div class="panel-heading">
+          <div>
+            <h2 id="converterTitle">Dosya dönüştürücü</h2>
+            <p>Bir dosya seç ve hedef biçimini belirle.</p>
+          </div>
+          <span class="step">ADIM 01 / 02</span>
+        </div>
+
+        <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Dosya seçmek veya sürükleyip bırakmak için tıkla">
+          <div class="upload-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15.5v3A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <strong>Dosyanı buraya sürükleyip bırak</strong>
+          <span class="sub">veya bilgisayarından bir dosya seç</span>
+          <button class="browse-btn" id="browseBtn" type="button">Dosya seç</button>
+          <div class="formats-line">Görsel · Ses · Belge · Tablo dosyaları</div>
+        </div>
+        <input id="fileInput" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.wav,.mp3,.txt,.md,.html,.htm,.pdf,.docx,.csv,.xlsx,.json" />
+
+        <div class="file-card" id="fileCard">
+          <div class="file-icon" id="fileIcon">FILE</div>
+          <div class="file-info">
+            <div class="file-name" id="fileName"></div>
+            <div class="file-meta" id="fileMeta"></div>
+          </div>
+          <button class="remove-file" id="removeFile" type="button" aria-label="Dosyayı kaldır">×</button>
+        </div>
+
+        <div class="convert-settings">
+          <div class="field">
+            <label for="fromFormat">Kaynak biçim</label>
+            <div class="select-wrap"><select id="fromFormat" disabled><option>Dosya seçilmedi</option></select></div>
+          </div>
+          <div class="swap" aria-hidden="true">→</div>
+          <div class="field">
+            <label for="toFormat">Hedef biçim</label>
+            <div class="select-wrap"><select id="toFormat" disabled><option>Önce dosya seç</option></select></div>
+          </div>
+        </div>
+
+        <button class="convert-btn" id="convertBtn" type="button" disabled>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-5-5 5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Dönüştür
+        </button>
+
+        <div class="progress-wrap" id="progressWrap" aria-live="polite">
+          <div class="progress-top"><span id="progressLabel">Dönüştürülüyor...</span><span id="progressPercent">0%</span></div>
+          <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+        </div>
+
+        <div class="result" id="resultBox" aria-live="polite">
+          <div class="result-mark">✓</div>
+          <div class="result-text"><strong>Dönüştürme tamamlandı!</strong><span id="resultName"></span></div>
+          <button class="download-btn" id="downloadBtn" type="button">İndir ↓</button>
+        </div>
+        <div class="status" id="statusBox" role="status"></div>
+      </section>
+
+      <aside class="side">
+        <section class="panel side-card">
+          <div class="side-title"><span class="mini-icon">▦</span> Desteklenen biçimler</div>
+          <div class="format-list">
+            <div class="format-item"><span class="format-badge">JPG</span><div><b>Görseller</b><small>PNG, JPG, WEBP, BMP</small></div></div>
+            <div class="format-item"><span class="format-badge">MP3</span><div><b>Ses dosyaları</b><small>MP3, WAV</small></div></div>
+            <div class="format-item"><span class="format-badge">PDF</span><div><b>Belgeler</b><small>PDF, DOCX, TXT, MD, HTML</small></div></div>
+            <div class="format-item"><span class="format-badge">XLS</span><div><b>Tablolar</b><small>CSV, XLSX, JSON</small></div></div>
+          </div>
+        </section>
+
+        <section class="panel side-card privacy-card">
+          <div class="side-title"><span class="mini-icon">⌑</span> Gizliliğin önceliğimiz</div>
+          <p>Dosyaların <strong>sunucuya gönderilmez.</strong> Dönüştürme işlemleri bu tarayıcı sekmesinde gerçekleşir. İşin bittiğinde sekmeyi kapatman yeterli.</p>
+        </section>
+
+        <div class="tip"><b>Bilgi:</b> İlk kullanımda bazı dönüştürme araçları internet üzerinden tarayıcıya yüklenir. Dosyanın kendisi hiçbir yere gönderilmez. Büyük ses ve video dosyaları cihazının belleğini zorlayabilir.</div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="shell">Made with <span>♥</span> · DosyaLab — Dosyaların senin kontrolünde.</footer>
+
+  <!-- Dış kütüphaneler yalnızca ilgili dönüştürme gerektiğinde yüklenir. -->
+  <script>
+    (() => {
+      'use strict';
+
+      const $ = (id) => document.getElementById(id);
+      const els = {
+        dropzone: $('dropzone'), fileInput: $('fileInput'), browseBtn: $('browseBtn'),
+        fileCard: $('fileCard'), fileIcon: $('fileIcon'), fileName: $('fileName'), fileMeta: $('fileMeta'),
+        removeFile: $('removeFile'), from: $('fromFormat'), to: $('toFormat'),
+        convert: $('convertBtn'), progressWrap: $('progressWrap'), progressLabel: $('progressLabel'),
+        progressPercent: $('progressPercent'), progressBar: $('progressBar'), result: $('resultBox'),
+        resultName: $('resultName'), download: $('downloadBtn'), status: $('statusBox')
+      };
+
+      const FORMAT_GROUPS = {
+        image: ['png', 'jpg', 'webp', 'bmp'],
+        audio: ['wav', 'mp3'],
+        document: ['txt', 'md', 'html', 'pdf', 'docx'],
+        spreadsheet: ['csv', 'xlsx', 'json']
+      };
+      const FORMAT_LABELS = {
+        png: 'PNG görseli', jpg: 'JPG görseli', webp: 'WEBP görseli', bmp: 'BMP görseli',
+        wav: 'WAV ses dosyası', mp3: 'MP3 ses dosyası', txt: 'Düz metin (TXT)',
+        md: 'Markdown (MD)', html: 'HTML belgesi', pdf: 'PDF belgesi', docx: 'Word belgesi (DOCX)',
+        csv: 'CSV tablosu', xlsx: 'Excel çalışma kitabı (XLSX)', json: 'JSON verisi'
+      };
+      const OUTPUTS = {
+        image: ['png', 'jpg', 'webp', 'bmp'],
+        audio: ['wav', 'mp3'],
+        document: {
+          txt: ['md', 'html', 'pdf'],
+          md: ['txt', 'html', 'pdf'],
+          html: ['txt', 'md', 'pdf'],
+          pdf: ['txt', 'md', 'html'],
+          docx: ['txt', 'md', 'html', 'pdf']
+        },
+        spreadsheet: {
+          csv: ['xlsx', 'json'],
+          xlsx: ['csv', 'json'],
+          json: ['csv', 'xlsx']
+        }
+      };
+
+      let selectedFile = null;
+      let resultBlob = null;
+      let resultFilename = '';
+      let loadedScripts = new Map();
+
+      function extension(name) {
+        const dot = name.lastIndexOf('.');
+        return dot > -1 ? name.slice(dot + 1).toLowerCase() : '';
+      }
+      function groupOf(ext) {
+        if (ext === 'htm') ext = 'html';
+        if (ext === 'jpeg') ext = 'jpg';
+        return Object.keys(FORMAT_GROUPS).find(group => FORMAT_GROUPS[group].includes(ext)) || null;
+      }
+      function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+        return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 2)} ${units[i]}`;
+      }
+      function setStatus(message, type = 'info') {
+        els.status.textContent = message;
+        els.status.className = `status visible ${type}`;
+      }
+      function clearStatus() {
+        els.status.textContent = '';
+        els.status.className = 'status';
+      }
+      function resetResult() {
+        resultBlob = null;
+        resultFilename = '';
+        els.result.classList.remove('visible');
+        els.progressWrap.classList.remove('visible');
+        els.progressBar.style.width = '0%';
+        els.progressPercent.textContent = '0%';
+      }
+      function setProgress(percent, label) {
+        els.progressWrap.classList.add('visible');
+        els.progressBar.style.width = `${percent}%`;
+        els.progressPercent.textContent = `${percent}%`;
+        if (label) els.progressLabel.textContent = label;
+      }
+      function populateTarget(ext) {
+        const group = groupOf(ext);
+        let available = [];
+        if (group === 'image' || group === 'audio') available = OUTPUTS[group].filter(x => x !== ext);
+        else if (group && OUTPUTS[group]) available = OUTPUTS[group][ext] || [];
+        els.from.innerHTML = `<option value="${ext}">${FORMAT_LABELS[ext] || ext.toUpperCase()}</option>`;
+        els.to.innerHTML = '';
+        if (!available.length) {
+          els.to.add(new Option('Dönüşüm bulunamadı', ''));
+          els.to.disabled = true;
+          els.convert.disabled = true;
+          setStatus('Bu dosya türü için şu anda desteklenen bir hedef biçim bulunmuyor.', 'info');
+          return;
+        }
+        available.forEach(fmt => els.to.add(new Option(FORMAT_LABELS[fmt], fmt)));
+        els.to.disabled = false;
+        els.convert.disabled = false;
+        clearStatus();
+      }
+      function acceptFile(file) {
+        if (!file) return;
+        let ext = extension(file.name);
+        if (ext === 'jpeg') ext = 'jpg';
+        if (ext === 'htm') ext = 'html';
+        const group = groupOf(ext);
+        if (!group) {
+          setStatus(`“.${ext || 'uzantısız'}” biçimi desteklenmiyor. Desteklenen türler: PNG, JPG, WEBP, BMP, WAV, MP3, TXT, MD, HTML, PDF, DOCX, CSV, XLSX ve JSON.`, 'error');
+          return;
+        }
+        selectedFile = file;
+        resetResult();
+        els.fileCard.classList.add('visible');
+        els.fileIcon.textContent = ext.toUpperCase();
+        els.fileName.textContent = file.name;
+        els.fileMeta.textContent = `${formatBytes(file.size)} · ${FORMAT_LABELS[ext]}`;
+        els.from.disabled = false;
+        populateTarget(ext);
+      }
+
+      els.browseBtn.addEventListener('click', (event) => { event.stopPropagation(); els.fileInput.click(); });
+      els.dropzone.addEventListener('click', (event) => { if (event.target !== els.browseBtn) els.fileInput.click(); });
+      els.dropzone.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); els.fileInput.click(); }
+      });
+      els.fileInput.addEventListener('change', (event) => {
+        if (event.target.files && event.target.files[0]) acceptFile(event.target.files[0]);
+        event.target.value = '';
+      });
+      ['dragenter', 'dragover'].forEach(type => els.dropzone.addEventListener(type, (event) => {
+        event.preventDefault(); event.stopPropagation(); els.dropzone.classList.add('dragover');
+      }));
+      ['dragleave', 'drop'].forEach(type => els.dropzone.addEventListener(type, (event) => {
+        event.preventDefault(); event.stopPropagation(); els.dropzone.classList.remove('dragover');
+      }));
+      els.dropzone.addEventListener('drop', (event) => {
+        const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+        if (file) acceptFile(file);
+      });
+      els.removeFile.addEventListener('click', () => {
+        selectedFile = null; resetResult(); clearStatus();
+        els.fileCard.classList.remove('visible');
+        els.from.innerHTML = '<option>Dosya seçilmedi</option>'; els.from.disabled = true;
+        els.to.innerHTML = '<option>Önce dosya seç</option>'; els.to.disabled = true;
+        els.convert.disabled = true;
+      });
+
+      function loadScript(url, globalName) {
+        if (globalName && window[globalName]) return Promise.resolve(window[globalName]);
+        if (loadedScripts.has(url)) return loadedScripts.get(url);
+        const promise = new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = url;
+          script.async = true;
+          script.onload = () => globalName && !window[globalName]
+            ? reject(new Error(`Kütüphane yüklendi ancak ${globalName} kullanılamıyor.`))
+            : resolve(globalName ? window[globalName] : true);
+          script.onerror = () => { loadedScripts.delete(url); reject(new Error('Gerekli dönüştürme aracı internetten yüklenemedi. İnternet bağlantını kontrol edip yeniden dene.')); };
+          document.head.appendChild(script);
+        });
+        loadedScripts.set(url, promise);
+        return promise;
+      }
+      const LIBS = {
+        mammoth: () => loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.13.0/mammoth.browser.min.js', 'mammoth'),
+        xlsx: () => loadScript('https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js', 'XLSX'),
+        lame: () => loadScript('https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js').then(() => {
+          if (!window.lamejs && window.Mp3Encoder) window.lamejs = { Mp3Encoder: window.Mp3Encoder };
+          if (!window.lamejs) throw new Error('MP3 kodlayıcısı yüklenemedi.');
+          return window.lamejs;
+        }),
+        pdf: () => loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js', 'pdfjsLib'),
+        html2pdf: () => loadScript('https://cdn.jsdelivr.net/npm/html2pdf.js@0.14.0/dist/html2pdf.bundle.min.js', 'html2pdf')
+      };
+
+      function blobFrom(data, type) { return new Blob([data], { type }); }
+      function outputName(file, target) {
+        const base = file.name.replace(/\.[^.]+$/, '');
+        return `${base}.${target === 'jpg' ? 'jpg' : target}`;
+      }
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+      }
+
+      // ---------- GÖRSEL DÖNÜŞÜMLERİ ----------
+      async function imageToBlob(file, target) {
+        let bitmap;
+        try { bitmap = await createImageBitmap(file); }
+        catch (_) { throw new Error('Görsel açılamadı. Dosyanın bozuk olmadığından emin ol.'); }
+        const canvas = document.createElement('canvas');
+        canvas.width = bitmap.width; canvas.height = bitmap.height;
+        const ctx = canvas.getContext('2d', { alpha: target !== 'jpg' });
+        if (target === 'jpg') { ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+        ctx.drawImage(bitmap, 0, 0); bitmap.close && bitmap.close();
+        if (target === 'bmp') return canvasToBmp(canvas);
+        const mime = ({ png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp' })[target];
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, mime, target === 'png' ? undefined : 0.92));
+        if (!blob) throw new Error('Tarayıcı bu görsel biçimini oluşturamadı.');
+        return blob;
+      }
+      function canvasToBmp(canvas) {
+        const { width, height } = canvas;
+        const rgba = canvas.getContext('2d').getImageData(0, 0, width, height).data;
+        const rowSize = Math.floor((24 * width + 31) / 32) * 4;
+        const pixelSize = rowSize * height;
+        const buffer = new ArrayBuffer(54 + pixelSize);
+        const view = new DataView(buffer);
+        view.setUint8(0, 0x42); view.setUint8(1, 0x4D);
+        view.setUint32(2, 54 + pixelSize, true); view.setUint32(10, 54, true);
+        view.setUint32(14, 40, true); view.setInt32(18, width, true); view.setInt32(22, height, true);
+        view.setUint16(26, 1, true); view.setUint16(28, 24, true); view.setUint32(34, pixelSize, true);
+        view.setInt32(38, 2835, true); view.setInt32(42, 2835, true);
+        let offset = 54;
+        for (let y = height - 1; y >= 0; y--) {
+          for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 4;
+            view.setUint8(offset++, rgba[i + 2]); view.setUint8(offset++, rgba[i + 1]); view.setUint8(offset++, rgba[i]);
+          }
+          while ((offset - 54) % rowSize !== 0) view.setUint8(offset++, 0);
+        }
+        return blobFrom(buffer, 'image/bmp');
+      }
+
+      // ---------- SES DÖNÜŞÜMLERİ ----------
+      async function decodeAudio(file) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) throw new Error('Bu tarayıcı Web Audio API desteklemiyor.');
+        const ctx = new AudioCtx();
+        try {
+          const buffer = await file.arrayBuffer();
+          const decoded = await ctx.decodeAudioData(buffer.slice(0));
+          return decoded;
+        } catch (error) {
+          throw new Error('Ses dosyası çözümlenemedi. Dosya bozuk olabilir veya tarayıcı bu ses kodlayıcısını desteklemiyor.');
+        } finally { await ctx.close().catch(() => {}); }
+      }
+      function encodeWav(audioBuffer) {
+        const channels = Math.min(audioBuffer.numberOfChannels, 2);
+        const sampleRate = audioBuffer.sampleRate;
+        const frames = audioBuffer.length;
+        const bytesPerSample = 2;
+        const blockAlign = channels * bytesPerSample;
+        const buffer = new ArrayBuffer(44 + frames * blockAlign);
+        const view = new DataView(buffer);
+        const write = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+        write(0, 'RIFF'); view.setUint32(4, 36 + frames * blockAlign, true); write(8, 'WAVE');
+        write(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true);
+        view.setUint16(22, channels, true); view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * blockAlign, true); view.setUint16(32, blockAlign, true);
+        view.setUint16(34, 16, true); write(36, 'data'); view.setUint32(40, frames * blockAlign, true);
+        const channelData = Array.from({ length: channels }, (_, i) => audioBuffer.getChannelData(i));
+        let offset = 44;
+        for (let i = 0; i < frames; i++) {
+          for (let c = 0; c < channels; c++) {
+            const sample = Math.max(-1, Math.min(1, channelData[c][i]));
+            view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+            offset += 2;
+          }
+        }
+        return blobFrom(buffer, 'audio/wav');
+      }
+      async function encodeMp3(audioBuffer) {
+        const lame = await LIBS.lame();
+        const channels = Math.min(audioBuffer.numberOfChannels, 2);
+        const sampleRate = audioBuffer.sampleRate;
+        const kbps = 192;
+        const encoder = new lame.Mp3Encoder(channels, sampleRate, kbps);
+        const left = audioBuffer.getChannelData(0);
+        const right = channels === 2 ? audioBuffer.getChannelData(1) : null;
+        const block = 1152;
+        const chunks = [];
+        const toInt16 = (source, start, end) => {
+          const out = new Int16Array(end - start);
+          for (let i = start; i < end; i++) {
+            const s = Math.max(-1, Math.min(1, source[i]));
+            out[i - start] = s < 0 ? s * 32768 : s * 32767;
+          }
+          return out;
+        };
+        for (let i = 0; i < left.length; i += block) {
+          const end = Math.min(i + block, left.length);
+          const l = toInt16(left, i, end);
+          const encoded = channels === 2
+            ? encoder.encodeBuffer(l, toInt16(right, i, end))
+            : encoder.encodeBuffer(l);
+          if (encoded.length) chunks.push(encoded);
+          if (i % (block * 100) === 0) await new Promise(resolve => setTimeout(resolve, 0));
+        }
+        const last = encoder.flush();
+        if (last.length) chunks.push(last);
+        return blobFrom(chunks, 'audio/mpeg');
+      }
+
+      // ---------- BELGE DÖNÜŞÜMLERİ ----------
+      const escapeHtml = (text) => String(text).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+      function htmlToText(html) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        doc.querySelectorAll('script,style,template,noscript').forEach(node => node.remove());
+        return (doc.body.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+      }
+      function markdownToText(markdown) {
+        return String(markdown)
+          .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+          .replace(/^\s*>\s?/gm, '')
+          .replace(/^\s*[-*+]\s+/gm, '')
+          .replace(/^\s*\d+\.\s+/gm, '')
+          .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+          .replace(/`([^`]+)`/g, '$1')
+          .replace(/\*\*(.+?)\*\*/g, '$1')
+          .replace(/__(.+?)__/g, '$1')
+          .replace(/\*(.+?)\*/g, '$1')
+          .replace(/_(.+?)_/g, '$1')
+          .replace(/~~(.+?)~~/g, '$1')
+          .replace(/^---+\s*$/gm, '')
+          .trim();
+      }
+      function markdownToHtml(md) {
+        const lines = String(md).split(/\r?\n/);
+        const out = []; let inList = false;
+        const inline = (s) => escapeHtml(s)
+          .replace(/`([^`]+)`/g, '<code>$1</code>')
+          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.+?)\*/g, '<em>$1</em>')
+          .replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>');
+        for (const line of lines) {
+          const trimmed = line.trim();
+          const match = trimmed.match(/^(#{1,6})\s+(.+)$/);
+          const bullet = trimmed.match(/^[-*+]\s+(.+)$/);
+          if (bullet) {
+            if (!inList) { out.push('<ul>'); inList = true; }
+            out.push(`<li>${inline(bullet[1])}</li>`); continue;
+          }
+          if (inList) { out.push('</ul>'); inList = false; }
+          if (!trimmed) { out.push(''); continue; }
+          if (match) out.push(`<h${match[1].length}>${inline(match[2])}</h${match[1].length}>`);
+          else if (/^>\s?/.test(trimmed)) out.push(`<blockquote>${inline(trimmed.replace(/^>\s?/, ''))}</blockquote>`);
+          else out.push(`<p>${inline(trimmed)}</p>`);
+        }
+        if (inList) out.push('</ul>');
+        return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Dönüştürülmüş belge</title></head><body>${out.join('\n')}</body></html>`;
+      }
+      function htmlToMarkdown(html) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        doc.querySelectorAll('script,style,noscript').forEach(n => n.remove());
+        const walk = (node) => {
+          if (node.nodeType === Node.TEXT_NODE) return node.nodeValue;
+          if (node.nodeType !== Node.ELEMENT_NODE) return '';
+          const tag = node.tagName.toLowerCase();
+          const content = Array.from(node.childNodes).map(walk).join('').trim();
+          if (/^h[1-6]$/.test(tag)) return `${'#'.repeat(Number(tag[1]))} ${content}\n\n`;
+          if (tag === 'strong' || tag === 'b') return `**${content}**`;
+          if (tag === 'em' || tag === 'i') return `*${content}*`;
+          if (tag === 'li') return `- ${content}\n`;
+          if (tag === 'p' || tag === 'div' || tag === 'br') return `${content}\n\n`;
+          if (tag === 'a') return content;
+          return content;
+        };
+        return Array.from(doc.body.childNodes).map(walk).join('').replace(/\n{3,}/g, '\n\n').trim();
+      }
+      async function pdfToText(file) {
+        await LIBS.pdf();
+        if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        }
+        const data = new Uint8Array(await file.arrayBuffer());
+        const pdf = await window.pdfjsLib.getDocument({ data }).promise;
+        const pages = [];
+        for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
+          const page = await pdf.getPage(pageNo);
+          const content = await page.getTextContent();
+          pages.push(content.items.map(item => item.str).join(' '));
+          setProgress(Math.round(pageNo / pdf.numPages * 70) + 20, `PDF sayfası okunuyor (${pageNo}/${pdf.numPages})`);
+        }
+        return pages.join('\n\n');
+      }
+      async function readDocument(file, ext) {
+        if (ext === 'docx') {
+          await LIBS.mammoth();
+          const arrayBuffer = await file.arrayBuffer();
+          const [raw, html] = await Promise.all([
+            window.mammoth.extractRawText({ arrayBuffer }),
+            window.mammoth.convertToHtml({ arrayBuffer })
+          ]);
+          return { text: raw.value, html: `<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>${escapeHtml(file.name)}</title></head><body>${html.value}</body></html>` };
+        }
+        if (ext === 'pdf') return { text: await pdfToText(file), html: '' };
+        const content = await file.text();
+        if (ext === 'html') return { text: htmlToText(content), html: content };
+        if (ext === 'md') return { text: content, html: markdownToHtml(content) };
+        return { text: content, html: `<pre style="white-space:pre-wrap;font-family:Arial,sans-serif">${escapeHtml(content)}</pre>` };
+      }
+      function safeHtmlForPdf(markup) {
+        const doc = new DOMParser().parseFromString(markup, 'text/html');
+        doc.querySelectorAll('script,style,iframe,object,embed,form,input,button,link,meta,base,video,audio,source,svg,math').forEach(el => el.remove());
+        doc.querySelectorAll('*').forEach(el => {
+          [...el.attributes].forEach(attr => {
+            const name = attr.name.toLowerCase();
+            const value = attr.value.trim().toLowerCase();
+            if (name.startsWith('on') || name === 'srcdoc' || name === 'style' || ((name === 'href' || name === 'src') && value.startsWith('javascript:'))) el.removeAttribute(attr.name);
+            if (name === 'src' && !value.startsWith('data:image/')) el.removeAttribute(attr.name);
+          });
+        });
+        return doc.body.innerHTML;
+      }
+      async function htmlToPdf(markup, textFallback) {
+        await LIBS.html2pdf();
+        const box = document.createElement('div');
+        box.style.cssText = 'position:fixed;left:-10000px;top:0;width:740px;padding:36px;background:#fff;color:#111;font:14px/1.6 Arial,sans-serif;z-index:-1;';
+        const safe = safeHtmlForPdf(markup || '');
+        box.innerHTML = safe || `<pre style="white-space:pre-wrap;font:14px/1.6 Arial,sans-serif">${escapeHtml(textFallback || '')}</pre>`;
+        document.body.appendChild(box);
+        try {
+          const worker = window.html2pdf().set({
+            margin: [12, 12, 12, 12],
+            filename: 'donusturulmus.pdf',
+            image: { type: 'jpeg', quality: 0.95 },
+            html2canvas: { scale: 1.5, useCORS: false, logging: false },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'] }
+          }).from(box).outputPdf('blob');
+          return await worker;
+        } finally { box.remove(); }
+      }
+
+      // ---------- TABLO / VERİ DÖNÜŞÜMLERİ ----------
+      async function convertSpreadsheet(file, from, to) {
+        await LIBS.xlsx();
+        let rows;
+        if (from === 'json') {
+          const parsed = JSON.parse(await file.text());
+          if (Array.isArray(parsed)) {
+            rows = parsed.map(item => item && typeof item === 'object' && !Array.isArray(item) ? item : { value: item });
+          } else if (parsed && typeof parsed === 'object') rows = [parsed];
+          else throw new Error('JSON içeriği bir nesne veya nesne dizisi olmalı.');
+          rows = rows.map(row => Object.fromEntries(Object.entries(row).map(([key, value]) => [key, value && typeof value === 'object' ? JSON.stringify(value) : value])));
+        } else {
+          const data = await file.arrayBuffer();
+          const workbook = window.XLSX.read(data, { type: 'array', cellDates: true });
+          const firstSheet = workbook.SheetNames[0];
+          if (!firstSheet) throw new Error('Tabloda okunabilir bir sayfa bulunamadı.');
+          const sheet = workbook.Sheets[firstSheet];
+          rows = window.XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
+        }
+        if (to === 'json') {
+          return blobFrom(JSON.stringify(rows, null, 2), 'application/json;charset=utf-8');
+        }
+        const headers = [...new Set(rows.flatMap(row => Object.keys(row)))];
+        const sheet = window.XLSX.utils.json_to_sheet(rows, { header: headers });
+        const workbook = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(workbook, sheet, 'Veriler');
+        if (to === 'csv') {
+          const csv = '\uFEFF' + window.XLSX.utils.sheet_to_csv(sheet);
+          return blobFrom(csv, 'text/csv;charset=utf-8');
+        }
+        const bytes = window.XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        return blobFrom(bytes, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      }
+
+      async function convert(file, from, to) {
+        const group = groupOf(from);
+        if (group === 'image') return imageToBlob(file, to);
+        if (group === 'audio') {
+          setProgress(12, 'Ses dosyası okunuyor...');
+          const audio = await decodeAudio(file);
+          setProgress(52, 'Ses biçimi dönüştürülüyor...');
+          return to === 'wav' ? encodeWav(audio) : encodeMp3(audio);
+        }
+        if (group === 'document') {
+          setProgress(12, 'Belge okunuyor...');
+          const doc = await readDocument(file, from);
+          setProgress(78, 'Yeni belge hazırlanıyor...');
+          if (to === 'txt') {
+            const plainText = from === 'md' ? markdownToText(doc.text) : doc.text;
+            return blobFrom(plainText, 'text/plain;charset=utf-8');
+          }
+          if (to === 'md') {
+            const md = from === 'html' || from === 'docx' ? htmlToMarkdown(doc.html) : doc.text;
+            return blobFrom(md, 'text/markdown;charset=utf-8');
+          }
+          if (to === 'html') {
+            const html = doc.html || `<pre style="white-space:pre-wrap">${escapeHtml(doc.text)}</pre>`;
+            return blobFrom(html, 'text/html;charset=utf-8');
+          }
+          if (to === 'pdf') return htmlToPdf(doc.html, doc.text);
+        }
+        if (group === 'spreadsheet') {
+          setProgress(15, 'Tablo verileri okunuyor...');
+          const result = await convertSpreadsheet(file, from, to);
+          setProgress(90, 'Dosya hazırlanıyor...');
+          return result;
+        }
+        throw new Error('Bu biçim çifti için dönüştürme henüz desteklenmiyor.');
+      }
+
+      els.convert.addEventListener('click', async () => {
+        if (!selectedFile || !els.to.value) return;
+        const from = els.from.value;
+        const to = els.to.value;
+        els.convert.disabled = true;
+        els.download.disabled = true;
+        clearStatus(); resetResult();
+        setProgress(5, 'Dönüştürme başlatılıyor...');
+        try {
+          const blob = await convert(selectedFile, from, to);
+          if (!(blob instanceof Blob) || blob.size === 0) throw new Error('Dönüştürülmüş dosya oluşturulamadı veya boş çıktı üretildi.');
+          resultBlob = blob;
+          resultFilename = outputName(selectedFile, to);
+          setProgress(100, 'Tamamlandı');
+          els.resultName.textContent = `${resultFilename} · ${formatBytes(blob.size)}`;
+          els.result.classList.add('visible');
+          setStatus('Dosyan hazır. İndir düğmesine basarak cihazına kaydedebilirsin.', 'info');
+        } catch (error) {
+          console.error(error);
+          setStatus(error && error.message ? error.message : 'Beklenmeyen bir hata oluştu. Dosyayı ve biçim seçimini kontrol edip yeniden dene.', 'error');
+          els.progressWrap.classList.remove('visible');
+        } finally {
+          els.convert.disabled = false;
+          els.download.disabled = false;
+        }
+      });
+      els.download.addEventListener('click', () => {
+        if (resultBlob && resultFilename) downloadBlob(resultBlob, resultFilename);
+      });
+
+      // Sayfa içi güvenlik: harici bir dosya sunucusuna gönderilmez.
+      window.addEventListener('beforeunload', () => {
+        resultBlob = null;
+        selectedFile = null;
+      });
+    })();
+  </script>
+</body>
+</html>
